@@ -1,0 +1,40 @@
+#!/usr/bin/ansible-playbook --inventory=inventory.ini
+
+- hosts: tomato_routers
+  gather_facts: no
+  user: root
+  vars:
+    shell_script: |-
+      #!/bin/sh
+
+      if curl -s freegeoip.net/json/ | grep -i 'North Carolina' &> /dev/null ; then
+        echo
+        echo "VPN Down, rebooting!!!"
+        echo
+        reboot
+      else
+        echo
+        echo "VPN is up, doing nothing."
+        echo
+      fi
+  roles:
+  - role: lib_tomato_utils
+
+  post_tasks:
+  - nvram:
+      state: present
+      name: example_simple_data_type
+      value: 40
+    register: example_simple_data_type_out
+
+  - debug: var=example_simple_data_type_out
+
+
+  - nvram:
+      state: present
+      name: example_complex_data_type
+      value: "{{ shell_script | b64encode }}"
+      b64_encoded: true
+    register: example_complex_data_type_out
+
+  - debug: var=example_complex_data_type_out
